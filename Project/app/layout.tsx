@@ -4,7 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "../context/AuthContext";
 import dynamic from "next/dynamic";
 import "../styles/globals.css";
-import "@n8n/chat/style.css";
+// import "@n8n/chat/style.css"; // Temporarily commented out
 import { Toaster } from "sonner";
 
 const spaceGrotesk = Space_Grotesk({

@@ -15,7 +15,7 @@ import { ArrowRight, Star, Award, Users, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Badge } from "./ui/badge";
-import { ChatWidget } from "./ui/chat-widget";
+// import { ChatWidget } from "./ui/chat-widget"; // Temporarily commented out
 import Image from "next/image";
 
 export const LandingPage = () => {
@@ -387,11 +387,13 @@ export const LandingPage = () => {
       <TeamSection />
       <Footer />
 
+      {/* ChatWidget temporarily commented out until @n8n/chat is properly configured
       <ChatWidget
         title="JobFit Assistant"
         subtitle="Trợ lý AI hỗ trợ tìm việc và phân tích CV"
         inputPlaceholder="Hỏi tôi về cơ hội nghề nghiệp..."
       />
+      */}
     </main>
   );
 };
