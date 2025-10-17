@@ -15,7 +15,7 @@ import { ArrowRight, Star, Award, Users, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Badge } from "./ui/badge";
-// import { ChatWidget } from "./ui/chat-widget"; // Temporarily commented out
+import { ChatWidget } from "./ui/chat-widget";
 import Image from "next/image";
 
 export const LandingPage = () => {
@@ -387,13 +387,15 @@ export const LandingPage = () => {
       <TeamSection />
       <Footer />
 
-      {/* ChatWidget temporarily commented out until @n8n/chat is properly configured
       <ChatWidget
+        webhookUrl="https://nini123.app.n8n.cloud/webhook/3a5c6e88-046d-4af9-a0ec-df9dc40981cd/chat"
         title="JobFit Assistant"
-        subtitle="Trợ lý AI hỗ trợ tìm việc và phân tích CV"
-        inputPlaceholder="Hỏi tôi về cơ hội nghề nghiệp..."
+        subtitle="AI assistant for job search and career development"
+        inputPlaceholder="Ask me about career opportunities..."
+        enableStreaming={false}
+        allowFileUploads={true}
+        mode="window"
       />
-      */}
     </main>
   );
 };

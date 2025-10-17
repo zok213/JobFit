@@ -4,7 +4,8 @@ import "./globals.css";
 import { AuthProvider } from "../context/AuthContext";
 import dynamic from "next/dynamic";
 import "../styles/globals.css";
-// import "@n8n/chat/style.css"; // Temporarily commented out
+import "@n8n/chat/style.css";
+import "../styles/n8n-chat-custom.css";
 import { Toaster } from "sonner";
 
 const spaceGrotesk = Space_Grotesk({
@@ -39,6 +40,9 @@ export default function RootLayout({
         <AuthProvider>{children}</AuthProvider>
         <DebugPanel />
         <Toaster richColors position="top-right" />
+        {process.env.NODE_ENV === "development" && (
+          <script src="/test-webhook.js" defer></script>
+        )}
       </body>
     </html>
   );

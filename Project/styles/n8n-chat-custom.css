@@ -1,0 +1,189 @@
+/* Custom n8n Chat Widget Styling for JobFit.AI */
+
+:root {
+  /* JobFit.AI Brand Colors */
+  --chat--color--primary: #84cc16; /* Lime-500 to match JobFit branding */
+  --chat--color--primary-shade-50: #65a30d; /* Lime-600 */
+  --chat--color--primary--shade-100: #4d7c0f; /* Lime-700 */
+  --chat--color--secondary: #10b981; /* Emerald-500 */
+  --chat--color-secondary-shade-50: #059669; /* Emerald-600 */
+
+  /* Base colors */
+  --chat--color-white: #ffffff;
+  --chat--color-light: #f8fafc; /* Slate-50 */
+  --chat--color-light-shade-50: #f1f5f9; /* Slate-100 */
+  --chat--color-light-shade-100: #e2e8f0; /* Slate-200 */
+  --chat--color-medium: #cbd5e1; /* Slate-300 */
+  --chat--color-dark: #0f172a; /* Slate-900 */
+  --chat--color-disabled: #64748b; /* Slate-500 */
+  --chat--color-typing: #374151; /* Gray-700 */
+
+  /* Dimensions */
+  --chat--spacing: 1rem;
+  --chat--border-radius: 0.75rem; /* Rounded-xl */
+  --chat--transition-duration: 0.2s;
+
+  /* Chat window sizing */
+  --chat--window--width: 420px;
+  --chat--window--height: 650px;
+
+  /* Header styling */
+  --chat--header-height: auto;
+  --chat--header--padding: 1.5rem 1rem 1rem 1rem;
+  --chat--header--background: linear-gradient(
+    135deg,
+    var(--chat--color--primary) 0%,
+    var(--chat--color--secondary) 100%
+  );
+  --chat--header--color: var(--chat--color-white);
+  --chat--header--border-top: none;
+  --chat--header--border-bottom: none;
+  --chat--heading--font-size: 1.25rem;
+  --chat--subtitle--font-size: 0.875rem;
+  --chat--subtitle--line-height: 1.4;
+
+  /* Input area */
+  --chat--textarea--height: 60px;
+  --chat--textarea--border-radius: 1rem;
+  --chat--textarea--border: 1px solid var(--chat--color-light-shade-100);
+  --chat--textarea--focus-border: 2px solid var(--chat--color--primary);
+
+  /* Messages */
+  --chat--message--font-size: 0.95rem;
+  --chat--message--padding: 0.875rem 1rem;
+  --chat--message--border-radius: 1rem;
+  --chat--message-line-height: 1.5;
+
+  /* Bot messages */
+  --chat--message--bot--background: var(--chat--color-white);
+  --chat--message--bot--color: var(--chat--color-dark);
+  --chat--message--bot--border: 1px solid var(--chat--color-light-shade-100);
+
+  /* User messages */
+  --chat--message--user--background: var(--chat--color--primary);
+  --chat--message--user--color: var(--chat--color-white);
+  --chat--message--user--border: none;
+
+  /* Code blocks */
+  --chat--message--pre--background: var(--chat--color-light);
+  --chat--message--pre--border: 1px solid var(--chat--color-light-shade-100);
+  --chat--message--pre--border-radius: 0.5rem;
+
+  /* Toggle button */
+  --chat--toggle--background: var(--chat--color--primary);
+  --chat--toggle--hover--background: var(--chat--color--primary-shade-50);
+  --chat--toggle--active--background: var(--chat--color--primary--shade-100);
+  --chat--toggle--color: var(--chat--color-white);
+  --chat--toggle--size: 70px;
+  --chat--toggle--border-radius: 50%;
+  --chat--toggle--box-shadow: 0 10px 25px -5px rgba(132, 204, 22, 0.4),
+    0 8px 10px -6px rgba(132, 204, 22, 0.1);
+}
+
+/* Enhanced styling for JobFit chat */
+#n8n-chat {
+  font-family: "Space Grotesk", system-ui, -apple-system, sans-serif;
+}
+
+/* Custom animations for the toggle button */
+#n8n-chat [data-n8n-chat="toggle"] {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+}
+
+#n8n-chat [data-n8n-chat="toggle"]:hover {
+  transform: scale(1.05);
+  box-shadow: 0 20px 25px -5px rgba(132, 204, 22, 0.3),
+    0 10px 10px -5px rgba(132, 204, 22, 0.1);
+}
+
+/* Chat window animations */
+#n8n-chat [data-n8n-chat="window"] {
+  animation: slideInUp 0.3s ease-out;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--chat--color-light-shade-100);
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Message styling improvements */
+#n8n-chat [data-n8n-chat="message"][data-n8n-chat-sender="bot"] {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+#n8n-chat [data-n8n-chat="message"][data-n8n-chat-sender="user"] {
+  box-shadow: 0 4px 6px -1px rgba(132, 204, 22, 0.2);
+}
+
+/* Input field improvements */
+#n8n-chat [data-n8n-chat="input"] {
+  transition: all 0.2s ease;
+}
+
+#n8n-chat [data-n8n-chat="input"]:focus {
+  box-shadow: 0 0 0 3px rgba(132, 204, 22, 0.1);
+}
+
+/* Send button styling */
+#n8n-chat [data-n8n-chat="send-button"] {
+  background: var(--chat--color--primary);
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+#n8n-chat [data-n8n-chat="send-button"]:hover {
+  background: var(--chat--color--primary-shade-50);
+  transform: translateY(-1px);
+}
+
+/* Typing indicator */
+#n8n-chat [data-n8n-chat="typing"] {
+  color: var(--chat--color--primary);
+}
+
+/* File upload area */
+#n8n-chat [data-n8n-chat="file-upload"] {
+  border: 2px dashed var(--chat--color--primary);
+  border-radius: 0.75rem;
+  background: rgba(132, 204, 22, 0.05);
+}
+
+/* Scrollbar styling */
+#n8n-chat [data-n8n-chat="messages"]::-webkit-scrollbar {
+  width: 6px;
+}
+
+#n8n-chat [data-n8n-chat="messages"]::-webkit-scrollbar-track {
+  background: var(--chat--color-light);
+}
+
+#n8n-chat [data-n8n-chat="messages"]::-webkit-scrollbar-thumb {
+  background: var(--chat--color-medium);
+  border-radius: 3px;
+}
+
+#n8n-chat [data-n8n-chat="messages"]::-webkit-scrollbar-thumb:hover {
+  background: var(--chat--color--primary);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 640px) {
+  :root {
+    --chat--window--width: calc(100vw - 2rem);
+    --chat--window--height: calc(100vh - 2rem);
+  }
+
+  #n8n-chat [data-n8n-chat="window"] {
+    margin: 1rem;
+    border-radius: 1rem;
+  }
+}
