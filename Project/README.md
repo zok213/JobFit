@@ -1,93 +1,183 @@
-# JobFit.AI
+# Supabase CLI
 
-A comprehensive AI-powered job matching and career development platform built with Next.js.
+[![Coverage Status](https://coveralls.io/repos/github/supabase/cli/badge.svg?branch=main)](https://coveralls.io/github/supabase/cli?branch=main) [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/supabase-cli/setup-cli/master?style=flat-square&label=Bitbucket%20Canary)](https://bitbucket.org/supabase-cli/setup-cli/pipelines) [![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/sweatybridge%2Fsetup-cli?label=Gitlab%20Canary)
+](https://gitlab.com/sweatybridge/setup-cli/-/pipelines)
 
-## 🚀 Features
+[Supabase](https://supabase.io) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
 
-### For Job Seekers
+This repository contains all the functionality for Supabase CLI.
 
-- **AI CV Assistant**: Intelligent CV analysis, building, and optimization
-- **Smart Job Matching**: AI-powered job-candidate compatibility analysis
-- **Career Roadmap Generator**: Personalized career development paths
-- **AI Interview Practice**: Voice-enabled interview simulation with real-time feedback
+- [x] Running Supabase locally
+- [x] Managing database migrations
+- [x] Creating and deploying Supabase Functions
+- [x] Generating types directly from your database schema
+- [x] Making authenticated HTTP requests to [Management API](https://supabase.com/docs/reference/api/introduction)
 
-### For Employers
+## Getting started
 
-- **Advanced Dashboard**: Comprehensive hiring management and analytics
-- **Smart Job Posting**: AI-optimized job descriptions
-- **Intelligent Candidate Matching**: Advanced filtering and compatibility scoring
-- **Interview Management**: Automated scheduling and AI-assisted evaluation
+### Install the CLI
 
-## 🛠️ Tech Stack
-
-- **Frontend**: Next.js 14 with App Router, TypeScript, Tailwind CSS
-- **Authentication**: Supabase Auth with role-based access control
-- **Database**: Supabase (PostgreSQL)
-- **State Management**: Zustand with persistence
-- **UI Components**: Custom components with Radix UI primitives
-- **Animations**: Framer Motion
-- **AI Integration**: DeepSeek, OpenAI, ElevenLabs, AssemblyAI
-
-## 📋 Prerequisites
-
-- Node.js 18.0 or higher
-- npm 8.0 or higher
-- Supabase account (for authentication and database)
-
-## 🚀 Quick Start
-
-### 1. Clone and Install
+Available via [NPM](https://www.npmjs.com) as dev dependency. To install:
 
 ```bash
-git clone <repository-url>
-cd jobfit-ai
-npm install
+npm i supabase --save-dev
 ```
 
-### 2. Environment Setup
-
-Copy the example environment file and configure your API keys:
+To install the beta release channel:
 
 ```bash
-cp .env.local.example .env.local
+npm i supabase@beta --save-dev
 ```
 
-Edit `.env.local` with your actual configuration:
+When installing with yarn 4, you need to disable experimental fetch with the following nodejs config.
 
-```env
-# Supabase Configuration (Required)
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-
-# AI API Keys (Optional - for AI features)
-DEEPSEEK_API_KEY=your_deepseek_api_key
-OPENAI_API_KEY=your_openai_api_key
-ELEVENLABS_API_KEY=your_elevenlabs_api_key
-ASSEMBLYAI_API_KEY=your_assemblyai_api_key
-
-# Python Backend (For Roadmap Generation)
-NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+NODE_OPTIONS=--no-experimental-fetch yarn add supabase
 ```
 
-### 3. Run Development Server
+> **Note**
+For Bun versions below v1.0.17, you must add `supabase` as a [trusted dependency](https://bun.sh/guides/install/trusted) before running `bun add -D supabase`.
+
+<details>
+  <summary><b>macOS</b></summary>
+
+  Available via [Homebrew](https://brew.sh). To install:
+
+  ```sh
+  brew install supabase/tap/supabase
+  ```
+
+  To install the beta release channel:
+  
+  ```sh
+  brew install supabase/tap/supabase-beta
+  brew link --overwrite supabase-beta
+  ```
+  
+  To upgrade:
+
+  ```sh
+  brew upgrade supabase
+  ```
+</details>
+
+<details>
+  <summary><b>Windows</b></summary>
+
+  Available via [Scoop](https://scoop.sh). To install:
+
+  ```powershell
+  scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
+  scoop install supabase
+  ```
+
+  To upgrade:
+
+  ```powershell
+  scoop update supabase
+  ```
+</details>
+
+<details>
+  <summary><b>Linux</b></summary>
+
+  Available via [Homebrew](https://brew.sh) and Linux packages.
+
+  #### via Homebrew
+
+  To install:
+
+  ```sh
+  brew install supabase/tap/supabase
+  ```
+
+  To upgrade:
+
+  ```sh
+  brew upgrade supabase
+  ```
+
+  #### via Linux packages
+
+  Linux packages are provided in [Releases](https://github.com/supabase/cli/releases). To install, download the `.apk`/`.deb`/`.rpm`/`.pkg.tar.zst` file depending on your package manager and run the respective commands.
+
+  ```sh
+  sudo apk add --allow-untrusted <...>.apk
+  ```
+
+  ```sh
+  sudo dpkg -i <...>.deb
+  ```
+
+  ```sh
+  sudo rpm -i <...>.rpm
+  ```
+
+  ```sh
+  sudo pacman -U <...>.pkg.tar.zst
+  ```
+</details>
+
+<details>
+  <summary><b>Other Platforms</b></summary>
+
+  You can also install the CLI via [go modules](https://go.dev/ref/mod#go-install) without the help of package managers.
+
+  ```sh
+  go install github.com/supabase/cli@latest
+  ```
+
+  Add a symlink to the binary in `$PATH` for easier access:
+
+  ```sh
+  ln -s "$(go env GOPATH)/bin/cli" /usr/bin/supabase
+  ```
+
+  This works on other non-standard Linux distros.
+</details>
+
+<details>
+  <summary><b>Community Maintained Packages</b></summary>
+
+  Available via [pkgx](https://pkgx.sh/). Package script [here](https://github.com/pkgxdev/pantry/blob/main/projects/supabase.com/cli/package.yml).
+  To install in your working directory:
+
+  ```bash
+  pkgx install supabase
+  ```
+
+  Available via [Nixpkgs](https://nixos.org/). Package script [here](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/supabase-cli/default.nix).
+</details>
+
+### Run the CLI
 
 ```bash
-npm run dev
+supabase bootstrap
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Or using npx:
 
-## Available Scripts
+```bash
+npx supabase bootstrap
+```
 
-To learn more about Next.js, take a look at the following resources:
+The bootstrap command will guide you through the process of setting up a Supabase project using one of the [starter](https://github.com/supabase-community/supabase-samples/blob/main/samples.json) templates.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Docs
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Command & config reference can be found [here](https://supabase.com/docs/reference/cli/about).
 
-## Deploy on Vercel
+## Breaking changes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+We follow semantic versioning for changes that directly impact CLI commands, flags, and configurations.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+However, due to dependencies on other service images, we cannot guarantee that schema migrations, seed.sql, and generated types will always work for the same CLI major version. If you need such guarantees, we encourage you to pin a specific version of CLI in package.json.
+
+## Developing
+
+To run from source:
+
+```sh
+# Go >= 1.22
+go run . help
+```

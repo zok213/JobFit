@@ -16,6 +16,7 @@ type AuthContextType = {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginAsDemo?: (role: "employee" | "employer") => Promise<void>;
   register: (
     email: string,
     username: string,
@@ -32,6 +33,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
   login: async () => {},
+  loginAsDemo: async () => {},
   register: async () => {},
   resetPassword: async () => {},
   updatePassword: async () => {},
@@ -140,6 +142,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("Attempting login with:", { email });
 
       // Xử lý đặc biệt cho tài khoản test@example.com
+      // legacy demo employee account
       if (email === "test@example.com" && password === "password123") {
         console.log("Using test@example.com account");
 
@@ -172,6 +175,41 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error) {
       console.error("Login error:", error);
       throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Convenience helper to sign in as a demo user without calling Supabase
+  const loginAsDemo = async (role: "employee" | "employer") => {
+    setIsLoading(true);
+    try {
+      if (role === "employee") {
+        const mockUser: User = {
+          id: "demo-employee-id",
+          email: "employee@demo.jobfit",
+          username: "Demo Employee",
+          role: "employee",
+        };
+        localStorage.setItem("jobfit_user", JSON.stringify(mockUser));
+        setUser(mockUser);
+        return;
+      }
+
+      if (role === "employer") {
+        const mockUser: User = {
+          id: "demo-employer-id",
+          email: "employer@demo.jobfit",
+          username: "Demo Employer",
+          role: "employer",
+        };
+        localStorage.setItem("jobfit_user", JSON.stringify(mockUser));
+        setUser(mockUser);
+        return;
+      }
+    } catch (e) {
+      console.error("Failed to login as demo user:", e);
+      throw e;
     } finally {
       setIsLoading(false);
     }
