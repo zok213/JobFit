@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { DashboardShell } from "@/components/DashboardShell";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 import {
   FileText,
   Plus,
@@ -26,8 +27,142 @@ import {
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { CVPreviewModal } from "@/components/ai-cv-assistant/CVPreviewModal";
+import { CVHistoryModal } from "@/components/ai-cv-assistant/CVHistoryModal";
+import { AIContentModal } from "@/components/ai-cv-assistant/AIContentModal";
+import { ChatAssistantModal } from "@/components/ai-cv-assistant/ChatAssistantModal";
 
 export default function CVAssistantPage() {
+  const router = useRouter();
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showAIContentModal, setShowAIContentModal] = useState(false);
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [cvData, setCvData] = useState(null);
+
+  const handleAIContentGeneration = () => {
+    setShowAIContentModal(true);
+  };
+
+  const handleInsertAIContent = (content: string) => {
+    // Copy to clipboard for now
+    navigator.clipboard.writeText(content);
+    alert('✅ Nội dung đã được sao chép! Hãy dán vào phần tạo CV.');
+  };
+
+  const handlePreviewCV = () => {
+    const cvDataString = localStorage.getItem('cv-builder-data');
+    if (!cvDataString) {
+      alert("⚠️ Chưa có CV nào để xem trước. Hãy tạo CV trước!");
+      router.push("/cv-assistant/builder");
+      return;
+    }
+    try {
+      const data = JSON.parse(cvDataString);
+      setCvData(data);
+      setShowPreviewModal(true);
+    } catch (error) {
+      alert("❌ Lỗi khi tải CV!");
+    }
+  };
+
+  const handleExportPDF = async () => {
+    if (!cvData) return;
+    
+    try {
+      // Convert blob URL to base64 if needed
+      let dataToSend: any = cvData;
+      
+      if (dataToSend.personal?.photoUrl && dataToSend.personal.photoUrl.startsWith('blob:')) {
+        try {
+          const response = await fetch(dataToSend.personal.photoUrl);
+          const blob = await response.blob();
+          const base64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+          
+          dataToSend = {
+            ...dataToSend,
+            personal: {
+              ...dataToSend.personal,
+              photoUrl: base64
+            }
+          };
+        } catch (error) {
+          console.error('Error converting photo:', error);
+        }
+      }
+      
+      const response = await fetch('/api/export-pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dataToSend),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate PDF');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const fullName = `${dataToSend.personal?.firstName || ''} ${dataToSend.personal?.lastName || ''}`.trim();
+      a.download = `CV_${fullName.replace(/\s+/g, '_') || 'Resume'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      alert('Có lỗi khi xuất PDF. Vui lòng thử lại!');
+    }
+  };
+
+  const handleViewHistory = () => {
+    setShowHistoryModal(true);
+  };
+
+  const handleRestoreVersion = (version: any) => {
+    localStorage.setItem('cv-builder-data', JSON.stringify(version.data));
+    setShowHistoryModal(false);
+    alert('✅ Đã khôi phục phiên bản CV! Hãy mở trang tạo CV để xem.');
+  };
+
+  const handlePreviewVersion = (version: any) => {
+    setCvData(version.data);
+    setShowHistoryModal(false);
+    setShowPreviewModal(true);
+  };
+
+  const handleChatAssistant = () => {
+    // Load current CV data for context
+    const cvDataString = localStorage.getItem('cv-builder-data');
+    if (cvDataString) {
+      setCvData(JSON.parse(cvDataString));
+    }
+    setShowChatModal(true);
+  };
+
+  const handleUploadCV = () => {
+    // Create file input
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,.doc,.docx';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      
+      // TODO: Parse CV file and extract data
+      alert(`📄 Đã chọn file: ${file.name}\n\n🚧 Tính năng phân tích và import CV tự động đang được phát triển!\n\nHiện tại bạn có thể tạo CV mới bằng công cụ tạo CV.`);
+    };
+    input.click();
+  };
+
   return (
     <DashboardShell activeNavItem="cv-assistant">
       <div className="py-8">
@@ -159,7 +294,7 @@ export default function CVAssistantPage() {
         <h2 className="text-2xl font-bold mb-6">Công cụ hỗ trợ CV</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
-          <Card className="border border-gray-200 hover:border-lime-300 shadow-sm hover:shadow-md transition-all cursor-pointer">
+          <Card className="border border-gray-200 hover:border-lime-300 shadow-sm hover:shadow-md transition-all cursor-pointer" onClick={handleAIContentGeneration}>
             <CardContent className="p-5">
               <div className="flex gap-4 items-start">
                 <div className="w-10 h-10 rounded-full bg-lime-100 flex items-center justify-center flex-shrink-0">
@@ -185,7 +320,7 @@ export default function CVAssistantPage() {
             </CardContent>
           </Card>
 
-          <Card className="border border-gray-200 hover:border-blue-300 shadow-sm hover:shadow-md transition-all cursor-pointer">
+          <Card className="border border-gray-200 hover:border-blue-300 shadow-sm hover:shadow-md transition-all cursor-pointer" onClick={handlePreviewCV}>
             <CardContent className="p-5">
               <div className="flex gap-4 items-start">
                 <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
@@ -209,7 +344,7 @@ export default function CVAssistantPage() {
             </CardContent>
           </Card>
 
-          <Card className="border border-gray-200 hover:border-amber-300 shadow-sm hover:shadow-md transition-all cursor-pointer">
+          <Card className="border border-gray-200 hover:border-amber-300 shadow-sm hover:shadow-md transition-all cursor-pointer" onClick={handleViewHistory}>
             <CardContent className="p-5">
               <div className="flex gap-4 items-start">
                 <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
@@ -235,7 +370,7 @@ export default function CVAssistantPage() {
             </CardContent>
           </Card>
 
-          <Card className="border border-gray-200 hover:border-purple-300 shadow-sm hover:shadow-md transition-all cursor-pointer">
+          <Card className="border border-gray-200 hover:border-purple-300 shadow-sm hover:shadow-md transition-all cursor-pointer" onClick={handleChatAssistant}>
             <CardContent className="p-5">
               <div className="flex gap-4 items-start">
                 <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
@@ -297,6 +432,7 @@ export default function CVAssistantPage() {
                 <Button
                   size="sm"
                   className="bg-black text-lime-300 hover:bg-gray-800"
+                  onClick={handleUploadCV}
                 >
                   Tải lên CV
                 </Button>
@@ -305,6 +441,38 @@ export default function CVAssistantPage() {
           </div>
         </div>
       </div>
+
+      {/* CV Preview Modal */}
+      {cvData && (
+        <CVPreviewModal
+          isOpen={showPreviewModal}
+          onClose={() => setShowPreviewModal(false)}
+          cvData={cvData}
+          onExportPDF={handleExportPDF}
+        />
+      )}
+
+      {/* CV History Modal */}
+      <CVHistoryModal
+        isOpen={showHistoryModal}
+        onClose={() => setShowHistoryModal(false)}
+        onRestore={handleRestoreVersion}
+        onPreview={handlePreviewVersion}
+      />
+
+      {/* AI Content Generator Modal */}
+      <AIContentModal
+        isOpen={showAIContentModal}
+        onClose={() => setShowAIContentModal(false)}
+        onInsert={handleInsertAIContent}
+      />
+
+      {/* Chat Assistant Modal */}
+      <ChatAssistantModal
+        isOpen={showChatModal}
+        onClose={() => setShowChatModal(false)}
+        cvData={cvData}
+      />
     </DashboardShell>
   );
 }

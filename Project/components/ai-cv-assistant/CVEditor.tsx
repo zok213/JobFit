@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -69,6 +69,60 @@ export function CVEditor() {
   const [activeTab, setActiveTab] = useState("personal");
   const [isLoading, setIsLoading] = useState(false);
   const [cvData, setCVData] = useState<CVData>(sampleCVData);
+
+  // Load data from CV Builder on mount
+  useEffect(() => {
+    const savedData = localStorage.getItem('cv-builder-data');
+    if (savedData) {
+      try {
+        const builderData = JSON.parse(savedData);
+        
+        // Convert CV Builder format to CV Editor format
+        const convertedData: CVData = {
+          personalInfo: {
+            name: `${builderData.personal?.firstName || ''} ${builderData.personal?.lastName || ''}`.trim(),
+            email: builderData.personal?.email || '',
+            phone: builderData.personal?.phone || '',
+            location: builderData.personal?.location || '',
+            website: '',
+            linkedin: builderData.links?.find((l: any) => l.label?.toLowerCase().includes('linkedin'))?.url || '',
+            github: builderData.links?.find((l: any) => l.label?.toLowerCase().includes('github'))?.url || '',
+          },
+          summary: builderData.summary || '',
+          workExperience: (builderData.experience || []).map((exp: any, index: number) => ({
+            id: `exp-${index}`,
+            company: exp.company || '',
+            position: exp.jobTitle || exp.title || '',
+            startDate: exp.startDate || '',
+            endDate: exp.endDate || '',
+            description: exp.description || '',
+            achievements: []
+          })),
+          education: (builderData.education || []).map((edu: any, index: number) => ({
+            id: `edu-${index}`,
+            institution: edu.school || '',
+            degree: edu.degree || '',
+            field: edu.fieldOfStudy || edu.field || '',
+            startDate: edu.startDate || '',
+            endDate: edu.graduationDate || edu.endDate || '',
+            description: edu.description || ''
+          })),
+          skills: (builderData.skills || []).map((skill: any, index: number) => ({
+            id: `skill-${index}`,
+            name: skill.name || skill,
+            level: 80
+          })),
+          projects: [],
+          certifications: [],
+          languages: []
+        };
+        
+        setCVData(convertedData);
+      } catch (error) {
+        console.error('Error loading CV Builder data:', error);
+      }
+    }
+  }, []);
 
   // Calculate completion percentage
   const calculateCompletion = () => {
@@ -257,11 +311,62 @@ export function CVEditor() {
   const handleSave = () => {
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // Save to localStorage (sync with CV Builder format)
+      localStorage.setItem('cv-editor-data', JSON.stringify(cvData));
+      
+      // Also update cv-builder-data for consistency
+      const builderFormat = {
+        personal: {
+          firstName: cvData.personalInfo.name.split(' ')[0] || '',
+          lastName: cvData.personalInfo.name.split(' ').slice(1).join(' ') || '',
+          email: cvData.personalInfo.email,
+          phone: cvData.personalInfo.phone,
+          location: cvData.personalInfo.location,
+          jobTitle: cvData.workExperience[0]?.position || '',
+          country: '',
+          photoUrl: ''
+        },
+        summary: cvData.summary,
+        experience: cvData.workExperience.map(exp => ({
+          company: exp.company,
+          jobTitle: exp.position,
+          startDate: exp.startDate,
+          endDate: exp.endDate,
+          description: exp.description,
+          location: ''
+        })),
+        education: cvData.education.map(edu => ({
+          school: edu.institution,
+          degree: edu.degree,
+          fieldOfStudy: edu.field,
+          startDate: edu.startDate,
+          graduationDate: edu.endDate,
+          description: edu.description
+        })),
+        skills: cvData.skills.map(skill => ({
+          name: skill.name,
+          level: skill.level
+        })),
+        links: [
+          cvData.personalInfo.linkedin && { label: 'LinkedIn', url: cvData.personalInfo.linkedin },
+          cvData.personalInfo.github && { label: 'GitHub', url: cvData.personalInfo.github },
+          cvData.personalInfo.website && { label: 'Website', url: cvData.personalInfo.website }
+        ].filter(Boolean),
+        customSections: []
+      };
+      
+      localStorage.setItem('cv-builder-data', JSON.stringify(builderFormat));
+      
+      setTimeout(() => {
+        setIsLoading(false);
+        alert('✅ Đã lưu CV thành công!');
+      }, 500);
+    } catch (error) {
+      console.error('Error saving CV:', error);
       setIsLoading(false);
-      // Show success notification or redirect
-    }, 1500);
+      alert('❌ Lỗi khi lưu CV!');
+    }
   };
 
   const downloadCV = () => {

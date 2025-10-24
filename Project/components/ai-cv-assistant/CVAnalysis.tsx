@@ -48,6 +48,106 @@ export function CVAnalysis() {
     loadDemoData();
   }
 
+  // Handler functions
+  const handleDownloadReport = async () => {
+    try {
+      // Prepare analysis data for PDF generation
+      const analysisData = {
+        overallScore: analysis?.overallScore || 0,
+        scores: Object.entries(analysis?.scores || {}).map(([category, score]) => ({
+          category: category.charAt(0).toUpperCase() + category.slice(1),
+          score: score as number
+        })),
+        strengths: analysis?.insights
+          ?.filter((i: any) => i.strength >= 70)
+          ?.map((i: any) => i.text) || [],
+        improvements: analysis?.suggestions
+          ?.map((s: any) => ({
+            area: s.section || 'General',
+            suggestion: s.description || s.title
+          })) || [],
+        keywords: {
+          matched: analysis?.presentKeywords || [],
+          missing: analysis?.missingKeywords || []
+        },
+        recommendations: analysis?.suggestions
+          ?.map((s: any) => `[${s.priority?.toUpperCase()}] ${s.title}: ${s.description}`) || []
+      };
+
+      // Generate PDF report via API
+      const response = await fetch('/api/export-analysis-report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ analysisData }),
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `CV_Analysis_Report_${new Date().getTime()}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        throw new Error('Failed to generate report');
+      }
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      alert('❌ Lỗi khi tải báo cáo! Vui lòng thử lại.');
+    }
+  };
+
+  const handleEnhanceCV = () => {
+    router.push('/cv-assistant/builder');
+  };
+
+  const handleDownloadAnalysis = () => {
+    // Download analysis as JSON
+    const analysisData = {
+      overallScore: analysis?.overallScore,
+      scores: analysis?.scores,
+      insights: analysis?.insights,
+      summary: analysis?.summary,
+      skills: analysis?.skills,
+      generatedAt: new Date().toISOString()
+    };
+    
+    const dataStr = JSON.stringify(analysisData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = window.URL.createObjectURL(dataBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `CV_Analysis_${new Date().getTime()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
+  const handleShareAnalysis = async () => {
+    const shareText = `Phân tích CV của tôi:\n\n📊 Điểm tổng thể: ${analysis?.overallScore}%\n\n✅ Điểm mạnh:\n${analysis?.insights?.filter(i => i.strength >= 70).map(i => `• ${i.text}`).join('\n')}\n\n🔧 Cần cải thiện:\n${analysis?.insights?.filter(i => i.strength < 70).map(i => `• ${i.text}`).join('\n')}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Phân tích CV',
+          text: shareText,
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+      }
+    } else {
+      // Fallback: Copy to clipboard
+      navigator.clipboard.writeText(shareText);
+      alert('✅ Đã sao chép kết quả phân tích vào clipboard!');
+    }
+  };
+
   // Handle loading state
   if (isAnalyzing || !analysis) {
     return (
@@ -375,14 +475,14 @@ export function CVAnalysis() {
 
       {/* Action buttons */}
       <div className="flex flex-col sm:flex-row gap-3 justify-end">
-        <LinkButton 
+        <Button
           variant="outline" 
           className="border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all"
-          icon={<Download className="h-4 w-4" />}
-          aria-label="Download analysis report"
+          onClick={handleDownloadReport}
         >
+          <Download className="h-4 w-4 mr-2" />
           Download Report
-        </LinkButton>
+        </Button>
         <LinkButton 
           variant="outline" 
           href="/cv-assistant/editor"
@@ -527,7 +627,7 @@ export function CVAnalysis() {
       
       <div className="mt-8 text-center">
         <Button
-          onClick={handleContinue}
+          onClick={handleEnhanceCV}
           className="bg-black hover:bg-gray-800 text-lime-400"
           size="lg"
         >
@@ -536,10 +636,10 @@ export function CVAnalysis() {
         </Button>
         
         <div className="flex justify-center mt-4 gap-4">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleDownloadAnalysis}>
             <Download className="mr-2 h-4 w-4" /> Download Analysis
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleShareAnalysis}>
             <Share2 className="mr-2 h-4 w-4" /> Share Analysis
           </Button>
         </div>

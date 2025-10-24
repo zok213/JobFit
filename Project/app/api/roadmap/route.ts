@@ -11,115 +11,159 @@ export async function POST(req: NextRequest) {
       data.chatInput.substring(0, 100) + "..."
     );
 
-    // Gọi trực tiếp đến Jina AI DeepSearch API
-    console.log("🔌 Connecting directly to Jina AI API");
+    // Use DeepSeek API instead of Jina (faster and more reliable)
+    console.log("🔌 Connecting to DeepSeek API");
 
-    const jinaApiKey = process.env.JINA_API_KEY || "";
-
-    // Cấu trúc payload cho API
-    const payload = {
-      model: "jina-deepsearch-v1",
-      messages: [
-        {
-          role: "user",
-          content: `Create a detailed roadmap based on the topic: "${data.chatInput}". 
-The roadmap structure should include:
-
-1. Main title describing the roadmap
-2. Brief introduction about the roadmap
-3. Development stages (at least 4 stages), each stage should have:
-   - Stage title and timeframe
-   - Clear description of the stage objectives
-   - List of core skills to develop (3-5 skills)
-   - For EACH skill, provide 1 specific link to a quality learning resource
-   - List of recommended learning resources (3-5 sources), including:
-     * Online courses (with specific links to each course)
-     * Books and materials (with links to purchase or read online)
-     * Practical projects (brief description and link to tutorials if available)
-   - Important milestones to achieve in this stage
-
-4. Additional advice and next development directions
-
-Ensure each link is a real link to an official website, do not use fake links. For courses, prioritize famous sources like Coursera, Udemy, edX, etc.
-Format the result in Markdown with headings, bullet points, and properly embedded links.`,
-        },
-      ],
-      stream: false,
-      temperature: 0.7,
-    };
-
-    // Gọi đến Jina AI API
-    const response = await fetch(
-      "https://deepsearch.jina.ai/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${jinaApiKey}`,
-          "User-Agent": "Mozilla/5.0",
-        },
-        body: JSON.stringify(payload),
-        // Thêm timeout để tránh chờ quá lâu
-        signal: AbortSignal.timeout(120000), // 120 giây timeout
-      }
-    );
-
-    // Kiểm tra nếu response không thành công
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("❌ Jina AI API error:", response.status, errorText);
+    const deepseekApiKey = process.env.DEEPSEEK_API_KEY || "";
+    
+    if (!deepseekApiKey) {
+      console.error("❌ DeepSeek API key not configured");
       return NextResponse.json(
-        {
-          error: `Jina AI API responded with status ${response.status}: ${errorText}`,
-        },
-        { status: response.status }
-      );
-    }
-
-    // Xử lý kết quả từ Jina AI API
-    const jinaResult = await response.json();
-    console.log("✅ Received response from Jina AI API");
-
-    // Trích xuất nội dung
-    let content = "";
-    if (jinaResult.choices && jinaResult.choices.length > 0) {
-      const choice = jinaResult.choices[0];
-      if (choice.message && choice.message.content) {
-        content = choice.message.content;
-      } else if (choice.text) {
-        content = choice.text;
-      }
-    }
-
-    if (!content) {
-      console.error("❌ No content found in Jina AI response");
-      return NextResponse.json(
-        { error: "No content found in Jina AI response" },
+        { error: "API key not configured. Please add DEEPSEEK_API_KEY to environment variables." },
         { status: 500 }
       );
     }
 
-    // Chuyển đổi markdown sang HTML
-    try {
-      // Sử dụng marked để chuyển đổi markdown sang HTML
-      const html = marked.parse(content as string) as string;
-      const enhancedHtml = addStylesToHTML(html);
+    // Simplified payload for faster response (no web search needed)
+    const payload = {
+      model: "deepseek-chat",
+      messages: [
+        {
+          role: "system",
+          content: "You are a career development expert. Create clear, actionable career roadmaps in Markdown format with specific skills, resources, and milestones for each stage."
+        },
+        {
+          role: "user",
+          content: `Create a detailed career roadmap for: "${data.chatInput}". 
 
-      // Trả về cả hai định dạng markdown và HTML
-      console.log("📤 Returning content to frontend");
-      return NextResponse.json({
-        text: content, // Vẫn giữ phiên bản markdown để tương thích ngược
-        html: enhancedHtml, // Thêm phiên bản HTML
-        nonce: String(Date.now()),
-      });
-    } catch (error) {
-      console.error("❌ Error converting markdown to HTML:", error);
-      // Nếu có lỗi khi chuyển đổi HTML, vẫn trả về markdown
-      return NextResponse.json({
-        text: content,
-        nonce: String(Date.now()),
-      });
+Use this Markdown structure:
+
+# [Career Goal] Roadmap
+
+[Brief 2-3 sentence introduction about the career path and what this roadmap covers]
+
+## Stage 1: [Foundation/Beginner] (Duration: X months)
+**Description:** [What this stage focuses on]
+
+**Key Skills to Develop:**
+- Skill 1: [Brief description]
+- Skill 2: [Brief description]
+- Skill 3: [Brief description]
+
+**Learning Resources:**
+- [Resource name 1] - [Platform/Type]
+- [Resource name 2] - [Platform/Type]
+- [Resource name 3] - [Platform/Type]
+
+**Projects & Practice:**
+- [Project idea 1]
+- [Project idea 2]
+
+**Milestone:** [Key achievement to aim for]
+
+## Stage 2-4: [Continue with Intermediate, Advanced, Expert stages]
+
+## Next Steps & Career Advice
+[Practical advice for continuous growth]
+
+Make it comprehensive with 4-5 stages. Focus on quality, actionable content.
+4. Additional advice and next development directions
+
+Ensure each link is a real link to an official website, do not use fake links. For courses, prioritize famous sources like Coursera, Udemy, edX, etc.
+Format the result in Markdown with headings, bullet points, and properly embedded links.`,
+
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 3000,
+    };
+
+    // Short timeout since DeepSeek is fast (typically responds in 5-10 seconds)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+    try {
+      const response = await fetch(
+        "https://api.deepseek.com/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${deepseekApiKey}`,
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        }
+      );
+
+      clearTimeout(timeoutId);
+
+      // Check if response is successful
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ DeepSeek API error:", response.status, errorText);
+        return NextResponse.json(
+          {
+            error: `API error ${response.status}. Please try again.`,
+          },
+          { status: response.status }
+        );
+      }
+
+      // Process the result from DeepSeek API
+      const result = await response.json();
+      console.log("✅ Received response from DeepSeek API");
+
+      // Extract content
+      let content = "";
+      if (result.choices && result.choices.length > 0) {
+        const choice = result.choices[0];
+        if (choice.message && choice.message.content) {
+          content = choice.message.content;
+        } else if (choice.text) {
+          content = choice.text;
+        }
+      }
+
+      if (!content) {
+        console.error("❌ No content found in API response");
+        return NextResponse.json(
+          { error: "No content found in API response" },
+          { status: 500 }
+        );
+      }
+
+      // Convert markdown to HTML
+      try {
+        const html = marked.parse(content as string) as string;
+        const enhancedHtml = addStylesToHTML(html);
+
+        console.log("📤 Returning content to frontend");
+        return NextResponse.json({
+          text: content,
+          html: enhancedHtml,
+          nonce: String(Date.now()),
+        });
+      } catch (error) {
+        console.error("❌ Error converting markdown to HTML:", error);
+        return NextResponse.json({
+          text: content,
+          nonce: String(Date.now()),
+        });
+      }
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      
+      // Handle timeout error specifically
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error("⏱️ Request timeout after 30 seconds");
+        return NextResponse.json(
+          { error: "Request timeout. Please try again or simplify your request." },
+          { status: 504 }
+        );
+      }
+      
+      throw fetchError; // Re-throw for outer catch to handle
     }
   } catch (error) {
     console.error("💥 API route error:", error);
@@ -240,6 +284,7 @@ function addStylesToHTML(html: string): string {
             background: white;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             transition: box-shadow 0.3s ease;
+            z-index: 2;
           }
           
           .tree-node:hover {
