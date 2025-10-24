@@ -27,9 +27,15 @@ const MAX_RECONNECT_ATTEMPTS = 3;
 // Thời gian timeout cho các request Redis (ms)
 const REDIS_TIMEOUT = 5000;
 
-// Redis connection URL
-const REDIS_URL =
-  "rediss://default:ATXGAAIjcDE1MmEwYmE4NmZhMzQ0MGQyYWJjNGJjMzc4ZWFkNmI2YXAxMA@blessed-seahorse-13766.upstash.io:6379";
+// Redis connection URL - Load from environment variable
+const REDIS_URL = process.env.REDIS_URL || "";
+
+// Validation check for Redis URL
+if (!REDIS_URL) {
+  console.warn(
+    "⚠️  REDIS_URL environment variable is not set. Interview sessions will not be persisted."
+  );
+}
 
 // Hàm chuyển đổi chuỗi JSON Date thành đối tượng Date
 const parseJsonDates = (session: InterviewSession): InterviewSession => {
