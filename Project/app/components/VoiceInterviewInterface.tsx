@@ -7,6 +7,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { MicIcon, StopCircleIcon, PlayIcon, PauseIcon } from "lucide-react";
+import { WebcamFeed } from "./WebcamFeed";
 
 interface Message {
   role: "user" | "assistant";
@@ -18,12 +19,16 @@ interface VoiceInterviewInterfaceProps {
   sessionId: string;
   initialMessage?: string;
   onSessionComplete?: () => void;
+  showWebcam?: boolean;
+  showEmotionDetection?: boolean;
 }
 
 export function VoiceInterviewInterface({
   sessionId,
   initialMessage = "Hello! I'm your interview assistant. You can start speaking after pressing the record button.",
   onSessionComplete,
+  showWebcam = false,
+  showEmotionDetection = false,
 }: VoiceInterviewInterfaceProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -33,6 +38,7 @@ export function VoiceInterviewInterface({
   const [isSessionInitialized, setIsSessionInitialized] = useState(false);
   const [sessionValidationRetries, setSessionValidationRetries] = useState(0);
   const maxRetries = 3;
+  const [faceDetected, setFaceDetected] = useState(false);
 
   const recorderRef = useRef<{
     mediaRecorder: MediaRecorder;
@@ -531,98 +537,119 @@ export function VoiceInterviewInterface({
   };
 
   return (
-    <div className="flex flex-col h-full max-w-3xl mx-auto">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message, index) => (
-          <Card
-            key={index}
-            className={cn(
-              "flex flex-col",
-              message.role === "assistant" ? "bg-muted" : "bg-background"
-            )}
-          >
-            <CardContent className="p-4">
-              <div className="flex items-start gap-2">
-                <Badge
-                  variant={message.role === "assistant" ? "default" : "outline"}
-                >
-                  {message.role === "assistant" ? "Assistant" : "You"}
-                </Badge>
-
-                {message.audioUrl && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleAudio(message)}
-                    className="p-1 h-6 w-6"
-                  >
-                    {isPlaying &&
-                    audioPlayerRef.current?.src === message.audioUrl ? (
-                      <PauseIcon className="h-4 w-4" />
-                    ) : (
-                      <PlayIcon className="h-4 w-4" />
-                    )}
-                  </Button>
-                )}
-              </div>
-
-              <p className="mt-2">{message.content}</p>
-            </CardContent>
-          </Card>
-        ))}
-
-        {isProcessing && (
-          <div className="flex justify-center">
-            <Spinner className="h-8 w-8" />
-            <span className="ml-2">Processing...</span>
+    <div className="flex flex-col h-full w-full mx-auto">
+      {/* Full width webcam at the top */}
+      {showWebcam && (
+        <div className="w-full mb-6 px-4">
+          <div className="w-full max-w-4xl mx-auto">
+            <WebcamFeed
+              enabled={true}
+              showFaceDetection={true}
+              showEmotionDetection={showEmotionDetection}
+              sessionId={sessionId}
+              onFaceDetected={(detected) => setFaceDetected(detected)}
+              className="w-full h-full"
+            />
           </div>
-        )}
+        </div>
+      )}
 
-        {error && (
-          <Card className="bg-red-50 border-red-200">
-            <CardContent className="p-4 text-red-800">{error}</CardContent>
-          </Card>
-        )}
-      </div>
+      {/* Chat messages area */}
+      <div className="flex-1 flex flex-col h-full max-w-5xl mx-auto w-full">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {messages.map((message, index) => (
+            <Card
+              key={index}
+              className={cn(
+                "flex flex-col",
+                message.role === "assistant" ? "bg-muted" : "bg-background"
+              )}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-start gap-2">
+                  <Badge
+                    variant={
+                      message.role === "assistant" ? "default" : "outline"
+                    }
+                  >
+                    {message.role === "assistant" ? "Assistant" : "You"}
+                  </Badge>
 
-      <div className="border-t p-4">
-        <div className="flex justify-center space-x-4">
-          {!isRecording ? (
-            <Button
-              onClick={startRecording}
-              disabled={isProcessing || !isSessionInitialized}
-              className="rounded-full h-16 w-16 flex items-center justify-center"
-            >
-              <MicIcon className="h-8 w-8" />
-            </Button>
-          ) : (
-            <Button
-              onClick={stopRecording}
-              variant="destructive"
-              className="rounded-full h-16 w-16 flex items-center justify-center"
-            >
-              <StopCircleIcon className="h-8 w-8" />
-            </Button>
+                  {message.audioUrl && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleAudio(message)}
+                      className="p-1 h-6 w-6"
+                    >
+                      {isPlaying &&
+                      audioPlayerRef.current?.src === message.audioUrl ? (
+                        <PauseIcon className="h-4 w-4" />
+                      ) : (
+                        <PlayIcon className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
+                </div>
+
+                <p className="mt-2">{message.content}</p>
+              </CardContent>
+            </Card>
+          ))}
+
+          {isProcessing && (
+            <div className="flex justify-center">
+              <Spinner className="h-8 w-8" />
+              <span className="ml-2">Processing...</span>
+            </div>
           )}
 
-          <Button
-            onClick={completeSession}
-            variant="outline"
-            disabled={isProcessing || !isSessionInitialized}
-          >
-            End Interview
-          </Button>
+          {error && (
+            <Card className="bg-red-50 border-red-200">
+              <CardContent className="p-4 text-red-800">{error}</CardContent>
+            </Card>
+          )}
         </div>
 
-        <p className="text-center mt-2 text-muted-foreground">
-          {isRecording
-            ? "Recording... Press to stop."
-            : isSessionInitialized
-            ? "Press to start recording"
-            : sessionValidationRetries > 0
-            ? `Initializing session (attempt ${sessionValidationRetries}/${maxRetries})...`
-            : "Initializing session..."}
-        </p>
+        <div className="border-t p-4">
+          <div className="flex justify-center space-x-4">
+            {!isRecording ? (
+              <Button
+                onClick={startRecording}
+                disabled={isProcessing || !isSessionInitialized}
+                className="rounded-full h-16 w-16 flex items-center justify-center"
+              >
+                <MicIcon className="h-8 w-8" />
+              </Button>
+            ) : (
+              <Button
+                onClick={stopRecording}
+                variant="destructive"
+                className="rounded-full h-16 w-16 flex items-center justify-center"
+              >
+                <StopCircleIcon className="h-8 w-8" />
+              </Button>
+            )}
+
+            <Button
+              onClick={completeSession}
+              variant="outline"
+              disabled={isProcessing || !isSessionInitialized}
+            >
+              End Interview
+            </Button>
+          </div>
+
+          <p className="text-center mt-2 text-muted-foreground">
+            {isRecording
+              ? "Recording... Press to stop."
+              : isSessionInitialized
+              ? "Press to start recording"
+              : sessionValidationRetries > 0
+              ? `Initializing session (attempt ${sessionValidationRetries}/${maxRetries})...`
+              : "Initializing session..."}
+          </p>
+        </div>
       </div>
     </div>
   );

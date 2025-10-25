@@ -24,6 +24,7 @@ import { isApiConfigured, setupInstructions } from "@/config/api-config";
 import { Switch } from "@/components/ui/switch";
 import { VoiceInterviewInterface } from "@/app/components/VoiceInterviewInterface";
 import { db } from "@/app/lib/db";
+import { WebcamFeed } from "@/app/components/WebcamFeed";
 
 interface InterviewSession {
   sessionId: string;
@@ -52,6 +53,11 @@ export default function InterviewerPage() {
   const [apiConfigured, setApiConfigured] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [useVoiceMode, setUseVoiceMode] = useState(false);
+  const [showWebcam, setShowWebcam] = useState(false);
+  const [showEmotionDetection, setShowEmotionDetection] = useState(false);
+  const [faceDetected, setFaceDetected] = useState(false);
+  const [currentEmotion, setCurrentEmotion] = useState<any>(null);
+  const [emotionReport, setEmotionReport] = useState<any>(null);
 
   const positions = [
     "Frontend Developer",
@@ -399,6 +405,42 @@ export default function InterviewerPage() {
                   )}
                 </div>
               </div>
+
+              <div className="mb-4 flex items-center space-x-2">
+                <div className="flex-1">
+                  <label className="text-sm font-medium text-gray-700">
+                    Show Camera
+                  </label>
+                  <p className="text-xs text-gray-500">
+                    Enable webcam to see yourself during the interview
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={showWebcam}
+                    onCheckedChange={setShowWebcam}
+                    id="webcam-mode"
+                  />
+                </div>
+              </div>
+
+              <div className="mb-4 flex items-center space-x-2">
+                <div className="flex-1">
+                  <label className="text-sm font-medium text-gray-700">
+                    Emotion Analysis
+                  </label>
+                  <p className="text-xs text-gray-500">
+                    Get real-time feedback on your emotional expressions
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={showEmotionDetection}
+                    onCheckedChange={setShowEmotionDetection}
+                    id="emotion-mode"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -507,99 +549,127 @@ export default function InterviewerPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 min-h-[500px] flex flex-col">
-            {errorMessage && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-start">
-                <AlertTriangle className="h-5 w-5 text-red-500 mr-2 mt-0.5" />
-                <div>
-                  <p className="font-medium">An error occurred</p>
-                  <p className="text-sm">{errorMessage}</p>
+          <div className="w-full">
+            {/* Centered larger camera when user enables Show Camera */}
+            {showWebcam && !useVoiceMode && (
+              <div className="flex justify-center mb-6">
+                <div className="w-full max-w-3xl h-[420px]">
+                  <WebcamFeed
+                    enabled={true}
+                    showFaceDetection={true}
+                    showEmotionDetection={showEmotionDetection}
+                    sessionId={session.sessionId}
+                    onFaceDetected={(detected) => setFaceDetected(detected)}
+                    onEmotionDetected={(emotion) => setCurrentEmotion(emotion)}
+                    className="w-full h-full"
+                  />
                 </div>
               </div>
             )}
 
-            <div className="mb-4 flex-grow">
-              <Card className="bg-gray-50 p-4 mb-6">
-                <p className="text-gray-800 font-medium">{session.question}</p>
-              </Card>
-
-              {session.messages.length > 0 && (
-                <div className="space-y-4 mb-6">
-                  <h3 className="text-sm font-medium text-gray-500">
-                    Interview history:
-                  </h3>
-                  <div className="max-h-60 overflow-y-auto space-y-3">
-                    {session.messages.map((msg, idx) => (
-                      <div key={idx} className="space-y-2">
-                        <div className="bg-lime-50 p-3 rounded-md">
-                          <p className="text-sm font-medium">{msg.question}</p>
-                        </div>
-                        <div className="bg-gray-100 p-3 rounded-md">
-                          <p className="text-sm">{msg.answer}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-auto">
-              {!session.isCompleted ? (
-                useVoiceMode ? (
-                  <div className="mb-4">
-                    <div className="bg-lime-50 p-3 rounded-lg mb-3 flex items-center">
-                      <Mic className="h-5 w-5 text-lime-600 mr-2" />
-                      <p className="text-sm">
-                        Voice interview mode is activated
-                      </p>
+            {/* Main interview area */}
+            <div className="w-full">
+              <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 min-h-[500px] flex flex-col">
+                {errorMessage && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 flex items-start">
+                    <AlertTriangle className="h-5 w-5 text-red-500 mr-2 mt-0.5" />
+                    <div>
+                      <p className="font-medium">An error occurred</p>
+                      <p className="text-sm">{errorMessage}</p>
                     </div>
-
-                    <VoiceInterviewInterface
-                      sessionId={session.sessionId}
-                      initialMessage={session.question}
-                      onSessionComplete={() => {
-                        if (session) {
-                          setSession({ ...session, isCompleted: true });
-                        }
-                      }}
-                    />
                   </div>
-                ) : (
-                  <div className="flex flex-col space-y-4">
-                    <Textarea
-                      placeholder="Enter your answer..."
-                      value={answer}
-                      onChange={(e) => setAnswer(e.target.value)}
-                      className="min-h-[120px]"
-                    />
-                    <div className="flex justify-end">
-                      <Button
-                        onClick={submitAnswer}
-                        disabled={loading || !answer.trim()}
-                        className="bg-black hover:bg-gray-800 text-lime-300"
-                      >
-                        {loading ? (
-                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <Send className="h-4 w-4 mr-2" />
-                        )}
-                        Submit Answer
-                      </Button>
-                    </div>
-                    <p className="text-xs text-gray-500 text-center mt-2">
-                      Type "stop" or "end" to finish the interview
+                )}
+
+                <div className="mb-4 flex-grow">
+                  <Card className="bg-gray-50 p-4 mb-6">
+                    <p className="text-gray-800 font-medium">
+                      {session.question}
                     </p>
-                  </div>
-                )
-              ) : (
-                <div className="text-center">
-                  <h2 className="text-xl font-medium mb-4">
-                    Interview Completed!
-                  </h2>
-                  <Button onClick={loadTranscript}>View Transcript</Button>
+                  </Card>
+
+                  {session.messages.length > 0 && (
+                    <div className="space-y-4 mb-6">
+                      <h3 className="text-sm font-medium text-gray-500">
+                        Interview history:
+                      </h3>
+                      <div className="max-h-60 overflow-y-auto space-y-3">
+                        {session.messages.map((msg, idx) => (
+                          <div key={idx} className="space-y-2">
+                            <div className="bg-lime-50 p-3 rounded-md">
+                              <p className="text-sm font-medium">
+                                {msg.question}
+                              </p>
+                            </div>
+                            <div className="bg-gray-100 p-3 rounded-md">
+                              <p className="text-sm">{msg.answer}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+
+                <div className="mt-auto">
+                  {!session.isCompleted ? (
+                    useVoiceMode ? (
+                      <div className="mb-4">
+                        <div className="bg-lime-50 p-3 rounded-lg mb-3 flex items-center">
+                          <Mic className="h-5 w-5 text-lime-600 mr-2" />
+                          <p className="text-sm">
+                            Voice interview mode is activated
+                          </p>
+                        </div>
+
+                        <VoiceInterviewInterface
+                          sessionId={session.sessionId}
+                          initialMessage={session.question}
+                          showWebcam={showWebcam}
+                          showEmotionDetection={showEmotionDetection}
+                          onSessionComplete={() => {
+                            if (session) {
+                              setSession({ ...session, isCompleted: true });
+                            }
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex flex-col space-y-4">
+                        <Textarea
+                          placeholder="Enter your answer..."
+                          value={answer}
+                          onChange={(e) => setAnswer(e.target.value)}
+                          className="min-h-[120px]"
+                        />
+                        <div className="flex justify-end">
+                          <Button
+                            onClick={submitAnswer}
+                            disabled={loading || !answer.trim()}
+                            className="bg-black hover:bg-gray-800 text-lime-300"
+                          >
+                            {loading ? (
+                              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <Send className="h-4 w-4 mr-2" />
+                            )}
+                            Submit Answer
+                          </Button>
+                        </div>
+                        <p className="text-xs text-gray-500 text-center mt-2">
+                          Type "stop" or "end" to finish the interview
+                        </p>
+                      </div>
+                    )
+                  ) : (
+                    <div className="text-center">
+                      <h2 className="text-xl font-medium mb-4">
+                        Interview Completed!
+                      </h2>
+                      <Button onClick={loadTranscript}>View Transcript</Button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
