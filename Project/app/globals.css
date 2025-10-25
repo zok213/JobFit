@@ -165,3 +165,17 @@
     transform: translate(-50%, -50%) scale(1);
   }
 }
+/* Prevent video zoom in webcam */
+.webcam-video-fixed {
+  transform: scale(1) !important;
+  transform-origin: center center !important;
+  -webkit-transform: scale(1) !important;
+  -moz-transform: scale(1) !important;
+  -ms-transform: scale(1) !important;
+  -o-transform: scale(1) !important;
+}
+
+.webcam-container-fixed {
+  transform: none !important;
+  -webkit-transform: none !important;
+}
